@@ -150,6 +150,35 @@ public class Lexer {
             return lexNumber(startLine, startCol);
         }
 
+        if (current == '"') {
+            return lexString(startLine, startCol);
+        }
+
         throw new RuntimeException("unexpected char '" + (char) current + "' line " + startLine);
+    }
+
+    private Symbol lexString(int startLine, int startCol) {
+        StringBuilder sb = new StringBuilder();
+        advance(); // skip "
+        while (current != -1 && current != '"') {
+            if (current == '\\') {
+                advance();
+                switch (current) {
+                    case 'n':  sb.append('\n'); break;
+                    case '\\': sb.append('\\'); break;
+                    case '"':  sb.append('"');  break;
+                    default:
+                        throw new RuntimeException("bad escape char '\\" + (char) current + "' line " + line);
+                }
+            } else {
+                sb.append((char) current);
+            }
+            advance();
+        }
+        if (current == -1) {
+            throw new RuntimeException("string pas fermee ligne " + startLine);
+        }
+        advance(); // skip "
+        return new Symbol(TokenType.STRING_LIT, sb.toString(), startLine, startCol);
     }
 }
