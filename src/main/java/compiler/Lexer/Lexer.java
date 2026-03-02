@@ -94,3 +94,62 @@ public class Lexer {
 
         return new Symbol(TokenType.IDENTIFIER, word, startLine, startCol);
     }
+
+    private Symbol lexNumber(int startLine, int startCol) {
+        StringBuilder sb = new StringBuilder();
+
+        // ".234" -> "0.234"
+        if (current == '.') {
+            sb.append("0.");
+            advance();
+            while (current != -1 && Character.isDigit(current)) {
+                sb.append((char) current);
+                advance();
+            }
+            return new Symbol(TokenType.FLOAT_LIT, sb.toString(), startLine, startCol);
+        }
+
+        // lire parti integer
+        while (current != -1 && Character.isDigit(current)) {
+            sb.append((char) current);
+            advance();
+        }
+
+        // float si ca continue apres la decimal
+        if (current == '.') {
+            sb.append('.');
+            advance();
+            while (current != -1 && Character.isDigit(current)) {
+                sb.append((char) current);
+                advance();
+            }
+            return new Symbol(TokenType.FLOAT_LIT, sb.toString(), startLine, startCol);
+        }
+
+        // parse pour strip les leading zeros: "00342" -> "342"
+        int val = Integer.parseInt(sb.toString());
+        return new Symbol(TokenType.INTEGER_LIT, String.valueOf(val), startLine, startCol);
+    }
+
+    public Symbol getNextSymbol() {
+        skipWhitespaceAndComments();
+
+        if (current == -1) {
+            return new Symbol(TokenType.EOF, line, column);
+        }
+
+        int startLine = line;
+        int startCol  = column;
+
+        if (Character.isLetter(current) || current == '_') {
+            return lexIdentifierOrKeyword(startLine, startCol);
+        }
+
+        // nombre ou float ".234"
+        if (Character.isDigit(current) || (current == '.' && Character.isDigit(peek()))) {
+            return lexNumber(startLine, startCol);
+        }
+
+        throw new RuntimeException("unexpected char '" + (char) current + "' line " + startLine);
+    }
+}
