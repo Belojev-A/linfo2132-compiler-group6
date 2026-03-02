@@ -154,7 +154,60 @@ public class Lexer {
             return lexString(startLine, startCol);
         }
 
-        throw new RuntimeException("unexpected char '" + (char) current + "' line " + startLine);
+        // operateurs et delimiteurs
+        switch (current) {
+            case '+': advance(); return new Symbol(TokenType.PLUS,      startLine, startCol);
+            case '*': advance(); return new Symbol(TokenType.TIMES,     startLine, startCol);
+            case '/': advance(); return new Symbol(TokenType.DIVIDE,    startLine, startCol);
+            case '%': advance(); return new Symbol(TokenType.MOD,       startLine, startCol);
+            case '(': advance(); return new Symbol(TokenType.LPAREN,    startLine, startCol);
+            case ')': advance(); return new Symbol(TokenType.RPAREN,    startLine, startCol);
+            case '{': advance(); return new Symbol(TokenType.LBRACE,    startLine, startCol);
+            case '}': advance(); return new Symbol(TokenType.RBRACE,    startLine, startCol);
+            case '[': advance(); return new Symbol(TokenType.LBRACKET,  startLine, startCol);
+            case ']': advance(); return new Symbol(TokenType.RBRACKET,  startLine, startCol);
+            case '.': advance(); return new Symbol(TokenType.DOT,       startLine, startCol);
+            case ';': advance(); return new Symbol(TokenType.SEMICOLON, startLine, startCol);
+            case ',': advance(); return new Symbol(TokenType.COMMA,     startLine, startCol);
+
+            case '-':
+                advance();
+                if (current == '>') { advance(); return new Symbol(TokenType.ARROW, startLine, startCol); }
+                return new Symbol(TokenType.MINUS, startLine, startCol);
+
+            case '=':
+                advance();
+                if (current == '=') { advance(); return new Symbol(TokenType.EQUAL, startLine, startCol); }
+                if (current == '/') {
+                    advance();
+                    if (current == '=') { advance(); return new Symbol(TokenType.NOT_EQUAL, startLine, startCol); }
+                    throw new RuntimeException("unexpected '=/' line " + startLine);
+                }
+                return new Symbol(TokenType.ASSIGN, startLine, startCol);
+
+            case '<':
+                advance();
+                if (current == '=') { advance(); return new Symbol(TokenType.LE, startLine, startCol); }
+                return new Symbol(TokenType.LT, startLine, startCol);
+
+            case '>':
+                advance();
+                if (current == '=') { advance(); return new Symbol(TokenType.GE, startLine, startCol); }
+                return new Symbol(TokenType.GT, startLine, startCol);
+
+            case '&':
+                advance();
+                if (current == '&') { advance(); return new Symbol(TokenType.AND, startLine, startCol); }
+                throw new RuntimeException("unexpected '&' line " + startLine);
+
+            case '|':
+                advance();
+                if (current == '|') { advance(); return new Symbol(TokenType.OR, startLine, startCol); }
+                throw new RuntimeException("unexpected '|' line " + startLine);
+
+            default:
+                throw new RuntimeException("unexpected char '" + (char) current + "' line " + startLine);
+        }
     }
 
     private Symbol lexString(int startLine, int startCol) {
