@@ -1,0 +1,31 @@
+# fichier de test simple
+
+final INT i = 3;
+final STRING message = "Hello";
+
+coll Point {
+    INT x;
+    INT y;
+}
+
+INT a = 3;
+
+def INT square(INT v) {
+    return v * v;
+}
+
+def main() {
+    INT value = read_INT();
+    INT x = 1 + 3;
+    println(square(value));
+    for (INT idx; 1 -> 10; idx + 1) {
+        while (value =/= 0) {
+            if (a > 0) {
+                value = value - 1;
+            } else {
+                a = a + 1;
+            }
+        }
+    }
+    idx = (idx + 2) * 2;
+}

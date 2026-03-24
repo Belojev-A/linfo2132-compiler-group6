@@ -1,0 +1,173 @@
+\documentclass[12pt,a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english]{babel}
+\usepackage{geometry}
+\geometry{margin=2.5cm}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{parskip}
+
+\lstdefinestyle{grammar}{
+    backgroundcolor=\color{blue!5},
+    basicstyle=\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    tabsize=4,
+}
+
+\begin{document}
+
+\begin{titlepage}
+    \centering
+    \vspace*{2cm}
+    {\LARGE \textbf{LINFO2132 -- Languages and Translators}\\[0.5cm]}
+    {\Large \textbf{Phase 2: Parser Report}\\[2cm]}
+    {\large Group 6\\[0.5cm]}
+    {\large UCLouvain, 2025--2026\\[2cm]}
+    \vfill
+    {\small \textit{Deadline: Tuesday March 24, 23:59}}
+\end{titlepage}
+
+% ==================================================================
+\section{Grammar Rules}
+% ==================================================================
+
+Terminal symbols are in \texttt{UPPERCASE} or quoted. Non-terminals are in \textit{CamelCase}.
+
+\subsection{Program structure}
+
+\begin{lstlisting}[style=grammar]
+Program     -> ConstDecl* CollDecl* VarDecl* FunctionDef*
+\end{lstlisting}
+
+\subsection{Declarations}
+
+\begin{lstlisting}[style=grammar]
+ConstDecl   -> 'final' Type IDENTIFIER '=' Expr ';'
+
+CollDecl    -> 'coll' COLLECTION_NAME '{' FieldDecl+ '}'
+FieldDecl   -> Type IDENTIFIER ';'
+
+VarDecl     -> Type IDENTIFIER ('=' Expr)? ';'
+\end{lstlisting}
+
+\subsection{Functions}
+
+\begin{lstlisting}[style=grammar]
+FunctionDef -> 'def' Type? IDENTIFIER '(' ParamList ')' Block
+ParamList   -> (Param (',' Param)*)?
+Param       -> Type IDENTIFIER
+\end{lstlisting}
+
+The return type is optional: if absent, the function returns \texttt{void}.
+
+\subsection{Block and Statements}
+
+\begin{lstlisting}[style=grammar]
+Block       -> '{' Statement* '}'
+
+Statement   -> VarDecl
+             | IDENTIFIER '=' Expr ';'
+             | IDENTIFIER '[' Expr ']' '=' Expr ';'
+             | IDENTIFIER '.' IDENTIFIER '=' Expr ';'
+             | IDENTIFIER '(' ArgList ')' ';'
+             | IfStmt
+             | WhileStmt
+             | ForStmt
+             | ReturnStmt
+
+IfStmt      -> 'if' '(' Expr ')' Block ('else' Block)?
+WhileStmt   -> 'while' '(' Expr ')' Block
+ForStmt     -> 'for' '(' Type IDENTIFIER ';' Expr '->' Expr ';' Expr ')' Block
+ReturnStmt  -> 'return' Expr? ';'
+\end{lstlisting}
+
+\subsection{Expressions}
+
+Expression parsing follows a precedence hierarchy (from lowest to highest):
+
+\begin{lstlisting}[style=grammar]
+Expr        -> LogicalOr
+
+LogicalOr   -> LogicalAnd ('||' LogicalAnd)*
+LogicalAnd  -> Comparison ('&&' Comparison)*
+Comparison  -> Addition (('==' | '=/=' | '<' | '>' | '<=' | '>=') Addition)?
+Addition    -> Multiply  (('+' | '-') Multiply)*
+Multiply    -> Unary     (('*' | '/' | '%') Unary)*
+Unary       -> '-' Primary | Primary
+
+Primary     -> INTEGER_LIT
+             | FLOAT_LIT
+             | STRING_LIT
+             | 'true' | 'false'
+             | IDENTIFIER ('(' ArgList ')')?
+             | COLLECTION_NAME '(' ArgList ')'
+             | '(' Expr ')'
+             | Type 'ARRAY' '[' Expr ']'
+             | Primary '[' Expr ']'
+             | Primary '.' IDENTIFIER
+
+ArgList     -> (Expr (',' Expr)*)?
+\end{lstlisting}
+
+\subsection{Types}
+
+\begin{lstlisting}[style=grammar]
+Type        -> 'INT' | 'FLOAT' | 'BOOL' | 'STRING' | COLLECTION_NAME
+\end{lstlisting}
+
+% ==================================================================
+\section{AST Node Names}
+% ==================================================================
+
+Example output for \texttt{INT x = 1 + 3;}:
+
+\begin{lstlisting}[style=grammar]
+VarDecl
+  Type: INT
+  Identifier: x
+  BinaryExpr: +
+    Integer: 1
+    Integer: 3
+\end{lstlisting}
+
+Left-associativity: \texttt{1 + 2 + 3} gives \texttt{(1+2)+3}:
+
+\begin{lstlisting}[style=grammar]
+BinaryExpr: +
+  BinaryExpr: +
+    Integer: 1
+    Integer: 2
+  Integer: 3
+\end{lstlisting}
+
+% ==================================================================
+\section{Unhandled Cases}
+% ==================================================================
+
+The following cases are not yet handled:
+
+\begin{itemize}
+    \item \textbf{Multi-dimensional arrays}: \texttt{ARRAY of ARRAY} types are not parsed.
+    \item \textbf{Chained lvalue}: \texttt{a[3].x = 12;} is not handled as a left-hand side of assignment.
+    \item \textbf{\texttt{not()} keyword}: \texttt{not} is treated as a regular function call, consistent with the Lexer returning \texttt{IDENTIFIER} for \texttt{not}.
+\end{itemize}
+
+The following cases were initially unhandled and have since been fixed:
+\begin{itemize}
+    \item \textbf{Array types}: \texttt{INT[]}, \texttt{Point[]} etc. are now parsed as types in declarations and parameters.
+    \item \textbf{For loop without type}: \texttt{for (i; 1 -> 100; i+1)} where the variable is already declared is now supported.
+\end{itemize}
+
+% ==================================================================
+\section{GitHub Repository}
+% ==================================================================
+
+\begin{center}
+    \texttt{https://github.com/[YOUR-REPO-LINK-HERE]}
+\end{center}
+
+\end{document}

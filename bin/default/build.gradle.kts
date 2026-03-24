@@ -17,7 +17,7 @@ repositories {
     mavenCentral()
 }
 
-sourceSets.main.get().java.srcDir("src/main/java")
+sourceSets.main.get().java.srcDir("src")
 sourceSets.test.get().java.srcDir("test")
 
 dependencies {

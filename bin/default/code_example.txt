@@ -1,0 +1,149 @@
+# Source is a single file. No imports, etc. 
+# Comments look like this. No block comments. 
+# The language is strongly and statically typed. 
+# Base types are:  
+#    INT (signed 32-bit), 
+#    FLOAT (32-bit),  
+#    BOOL (true/false),  
+#    STRING. 
+# INT values are automatically promoted to FLOAT values in mixed expressions. 
+# There is no dedicated char type. Characters are represented by INTegers. 
+# Strings are immutable. 
+  
+# Operations: 
+#  For INT and FLOAT, available operations are 
+#      +, -, * , /, - (unary). 
+#      ==, =/=, <, >, <=, >= 
+#  For INT: 
+#      % 
+#  For BOOL: 
+#      && (and operator), || (or operator), ==, =/= 
+#  For STRING 
+#      + (concatenation), ==, =/= 
+#  The i-th characters/element in a STRING/ARRAY can be read by the index operator [i]. 
+  
+# Built-in functions: 
+#      not(BOOL)            : negates a boolean value, returns a boolean value 
+#      str(INT)           : turns the character (an INT value) into a STRING, returns a STRING 
+#      length(STRING or ARRAY)  : gives the length of a STRING or ARRAY, returns an INTeger 
+#      floor(FLOAT)    : returns the largest INT less than or equal the FLOAT value 
+#      ceil(FLOAT)    : returns the smallest INT greather than or equal the FLOAT value 
+# Exceptions: 
+# Run-time errors terminate the running program. 
+# Can happen when: 
+#    Out of memory 
+#    Division by zero 
+#    Out-of-bounds ARRAY and STRING access 
+#    FLOAT->INT overflow error 
+  
+# Operator precedence: 
+#     function and constructor calls 
+#     parenthesis 
+#     collection field access operator . 
+#     index operator 
+#     *,/,% 
+#     +,-, unary - 
+#     ==, =/=, <, >, <=, >= 
+#     &&, || 
+# Operators with same precedence are left-associative. 
+# (We won’t try to nestle inequalities in our test, such as “a < b < c”.) 
+ 
+# Constants must be declared at the top of the source file (if not respected, throw a semantic error). 
+# Constant declarations can use expressions and other constants that 
+# have been declared earlier. Only base types can be used for constants. 
+  
+final INT i = 3; 
+final FLOAT j = 3.2*5.0; 
+final INT k = i*3; 
+final STRING message = "Hello"; 
+final BOOL isEmpty  = true; 
+  
+# Constant declarations are followed by collection definitions. 
+coll Point { 
+    INT x; 
+    INT y; 
+} 
+coll Person { 
+    STRING name; 
+    Point location; 
+    INT[] history; 
+} 
+  
+# Global variables are initialised in the order in which they appear. 
+# Variables do not always have an initialiser. 
+# Initialiser can be an expression. 
+INT a = 3; 
+# For ARRAYs, only one-dimensional ARRAYs are required (higher order ARRAY programming can be implemented as an extra feature). 
+# To initialise ARRAY or collection variables, they must be assigned to an existing collection or ARRAY, or a new ARRAY or collection must be created. 
+INT[] c  = INT ARRAY [5] ;  # new ARRAY of length 5 
+Person d = Person("me", Point(3,7), INT ARRAY [i*2] );  # new collection 
+  
+# Functions: 
+# Functions have parameters and a return type. The return type 
+# can be a type or void (in which case nothing is indicated). 
+# Return can take expressions and declarations. 
+# Base type arguments are always passed by value. 
+# Collections and ARRAYs are always passed by reference. 
+# There are built-in functions for I/O: 
+#  read_INT, read_FLOAT, read_STRING, print_INT, print_FLOAT, print, println 
+# all "read" functions take nothing as argument, as they read for the standard input, and return the type specified. All “print” functions print on the standard output (they can be seen as print functions). 
+# "print_INT" and "print_FLOAT" take an "INT" and "FLOAT" as argument respectively, and return nothing or True/False if it succeeded or not (to be decided at the code generation phase; for now you can make an arbitrary choice). 
+# "print" and "println" can take anything as argument (including any primitive type or no argument). "println" will add an end-of-line at the end of what is written. The output is the same as the other "print" functions 
+# HINT: print_FLOAT should accept “-a” as an argument, where “a” is a FLOAT variable.  
+# Function calls can forward-reference functions, even in initialisers of global variables, but not in constants. 
+  
+# Local variables: 
+# Functions and while/if/else/for blocks can declare local variables and values 
+# mixed with statements. 
+# Their initialisation follows the same rules as for global variables. 
+  
+# Scope: 
+# Lexical scoping. 
+# Local variables can shadow variables with the same name in surrounding scopes. 
+# Keywords, types, functions, constants, and variables share one name space. 
+# All names are case sensitive. 
+  
+# Control structures: 
+# for, while, if, if/else 
+# Control structures bodies are always block statements. 
+ 
+# for loops are initialised with 3 arguments: 
+#	- an initialised variable. 
+#	- a range, taking the form of “<initial value> -> <max value>”. 
+#	- the updated value of the variable for the next iteration 
+# The loop begins by assigning the variable with the initial value of the range and stops when it reaches the max value (so <max value> is not included in the range). 
+  
+# The left side of an assignment must be either: 
+#    a variable 
+#    an element of an ARRAY 
+#         a[3] = 1234;   # a is an ARRAY of INT 
+#    a field access to a collection such as: 
+#         a.x = 123; 
+#         a[3].x = 12; 
+#    To simplify the compiler, the left side cannot be an expression, this is not allowed: 
+#         someFunctionThatReturnsAnArray()[2] = 2; 
+#    Assigning an ARRAY or collection copies the reference. 
+                                          
+def INT square(INT v) { 
+    return v*v; 
+} 
+  
+def Point copyPoints(Point[] p) { 
+    return Point(p[0].x+p[1].x, p[0].y+p[1].y); 
+} 
+                             
+def main() { 
+    INT value = read_INT();
+    println(square(value)); 
+    for (INT i; 1 -> 100; i+1) { 
+        while (value=/=3) { 
+            if (i > 10){ 
+                # .... 
+            } else { 
+                # .... 
+            } 
+        } 
+    } 
+
+    i = (i+2)*2; 
+} 

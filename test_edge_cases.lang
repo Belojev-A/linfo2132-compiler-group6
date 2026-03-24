@@ -1,0 +1,57 @@
+# test cas limites
+
+# 1) float literal
+FLOAT f = 3.14;
+FLOAT g = .5;
+
+# 2) chaine vide
+STRING s = "";
+
+# 3) expression bool
+BOOL b = true;
+
+# 4) multiple constantes
+final FLOAT pi = 3.14;
+final BOOL flag = false;
+
+# 5) collection avec type collection
+coll Person {
+    STRING name;
+    INT age;
+}
+
+# 6) variable de type collection
+Person p = Person("Alice", 30);
+
+# 7) acces champ
+def main() {
+    Person q = Person("Bob", 25);
+    INT age = q.age;
+    q.age = 26;
+
+    # 8) tableau
+    INT arr = INT ARRAY [10];
+    INT v = arr[0];
+    arr[0] = 42;
+
+    # 9) acces chaine
+    INT c = s[0];
+
+    # 10) expressions complexes
+    INT x = (1 + 2) * (3 - 4) / 5 % 2;
+    BOOL cond = x > 0 && flag || b;
+
+    # 11) appels imbriques
+    println(square(read_INT()));
+
+    # 12) return void
+    return;
+
+    # 13) negation unaire
+    INT neg = -x;
+    FLOAT fneg = -3.14;
+}
+
+def INT square(INT v) {
+    return v * v;
+}
