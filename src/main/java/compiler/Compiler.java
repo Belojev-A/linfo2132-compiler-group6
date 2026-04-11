@@ -3,9 +3,10 @@ package compiler;
 import compiler.Lexer.Lexer;
 import compiler.Lexer.Symbol;
 import compiler.Lexer.TokenType;
-import compiler.Parser.ParseException;
 import compiler.Parser.Parser;
 import compiler.Parser.ast.ASTNode;
+import compiler.SemanticAnalysis.SemanticAnalyzer;
+import compiler.SemanticAnalysis.SemanticException;
 
 import java.io.FileReader;
 import java.io.IOException;
@@ -26,6 +27,8 @@ public class Compiler {
             runLexer(filepath);
         } else if (mode.equals("-parser")) {
             runParser(filepath);
+        } else if (mode.equals("-semantic")) {
+            runSemantic(filepath);
         } else {
             System.err.println("Mode inconnu: " + mode);
             System.exit(1);
@@ -57,8 +60,30 @@ public class Compiler {
     }
 
     
+    // parse + analyse sémantique
+    private static void runSemantic(String filepath) {
+        try {
+            Reader reader = new FileReader(filepath);
+            Lexer lexer = new Lexer(reader);
+            Parser parser = new Parser(lexer);
+            ASTNode root = parser.getAST();
+            new SemanticAnalyzer().analyze(root);
+            System.out.println("OK: aucune erreur sémantique");
+            reader.close();
+        } catch (IOException e) {
+            System.err.println("File error: " + e.getMessage());
+            System.exit(1);
+        } catch (SemanticException e) {
+            System.err.println(e.getMessage());
+            System.exit(2);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
+    }
+
     // affiche l'AST
-   
+
     private static void runParser(String filepath) {
         try {
             Reader reader = new FileReader(filepath);
