@@ -58,6 +58,7 @@ public class SemanticAnalyzer {
         def("length",  SymbolInfo.function(Type.INT,  null, null));
         def("print",   SymbolInfo.function(Type.VOID, null, null));
         def("println", SymbolInfo.function(Type.VOID, null, null));
+        def("write",   SymbolInfo.function(Type.VOID, null, null));  // alias de println
     }
 
     private void def(String name, SymbolInfo info) { globalTable.define(name, info); }
