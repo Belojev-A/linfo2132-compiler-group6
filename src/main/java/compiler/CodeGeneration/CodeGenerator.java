@@ -401,7 +401,7 @@ public class CodeGenerator {
         mv.visitLabel(startLabel);
         emitLoad(typeName, slots.get(varName), mv);
         generateExpr(endExpr, mv, slots, varTypes);
-        mv.visitJumpInsn(IF_ICMPGT, endLabel);
+        mv.visitJumpInsn(IF_ICMPGE, endLabel);
 
         generateBlock(body, mv, slots, nextSlot, varTypes);
 
