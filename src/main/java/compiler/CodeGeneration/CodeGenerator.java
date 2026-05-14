@@ -68,9 +68,9 @@ public class CodeGenerator {
         }
     }
 
-    // génère les static fields et le <clinit> pour les variables globales
     private void generateGlobals() {
-        if (globalVarTypes.isEmpty()) return;
+        // champ scanner statique pour les read_*
+        cw.visitField(ACC_PRIVATE | ACC_STATIC, "__scanner", "Ljava/util/Scanner;", null, null).visitEnd();
 
         for (ASTNode child : root.getChildren()) {
             String lbl = child.getLabel();
@@ -82,9 +82,15 @@ public class CodeGenerator {
 
         MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
         mv.visitCode();
+
+        mv.visitTypeInsn(NEW, "java/util/Scanner");
+        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, "java/lang/System", "in", "Ljava/io/InputStream;");
+        mv.visitMethodInsn(INVOKESPECIAL, "java/util/Scanner", "<init>", "(Ljava/io/InputStream;)V", false);
+        mv.visitFieldInsn(PUTSTATIC, className, "__scanner", "Ljava/util/Scanner;");
+
         Map<String, Integer> emptySlots = new HashMap<>();
         Map<String, String>  emptyTypes = new HashMap<>();
-
         for (ASTNode child : root.getChildren()) {
             String lbl = child.getLabel();
             if (!lbl.equals("VarDecl") && !lbl.equals("ConstDecl")) continue;
@@ -266,8 +272,7 @@ public class CodeGenerator {
         String funcName = leafVal(expr, 0);
         ASTNode argList = expr.getChildren().get(1);
 
-        // built-ins → push 4
-        if (isBuiltin(funcName)) return "V";
+        if (isBuiltin(funcName)) return generateBuiltin(funcName, argList, mv, slots, varTypes);
 
         // fonction utilisateur
         for (ASTNode arg : argList.getChildren())
@@ -286,6 +291,103 @@ public class CodeGenerator {
             case "str": case "floor": case "ceil": case "length": case "not":
                 return true;
             default: return false;
+        }
+    }
+
+    private String builtinReturnType(String name) {
+        switch (name) {
+            case "read_INT": case "floor": case "ceil": case "length": return "I";
+            case "not":       return "Z";
+            case "read_FLOAT": return "F";
+            case "read_STRING": case "str": return "Ljava/lang/String;";
+            default: return "V";
+        }
+    }
+
+    private String generateBuiltin(String name, ASTNode argList, MethodVisitor mv,
+                                   Map<String, Integer> slots, Map<String, String> varTypes) {
+        List<ASTNode> args = argList.getChildren();
+        switch (name) {
+            case "println": case "print": {
+                if (args.isEmpty()) {
+                    mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                    mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", name, "()V", false);
+                    return "V";
+                }
+                ASTNode arg = args.get(0);
+                String argType = inferType(arg, varTypes);
+                mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                generateExpr(arg, mv, slots, varTypes);
+                String desc;
+                switch (argType) {
+                    case "F":                  desc = "(F)V"; break;
+                    case "Z":                  desc = "(Z)V"; break;
+                    case "Ljava/lang/String;": desc = "(Ljava/lang/String;)V"; break;
+                    default:                   desc = "(I)V"; break;
+                }
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", name, desc, false);
+                return "V";
+            }
+            case "print_INT": {
+                mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", "(I)V", false);
+                return "V";
+            }
+            case "print_FLOAT": {
+                mv.visitFieldInsn(GETSTATIC, "java/lang/System", "out", "Ljava/io/PrintStream;");
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/io/PrintStream", "print", "(F)V", false);
+                return "V";
+            }
+            case "read_INT": {
+                mv.visitFieldInsn(GETSTATIC, className, "__scanner", "Ljava/util/Scanner;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextInt", "()I", false);
+                return "I";
+            }
+            case "read_FLOAT": {
+                mv.visitFieldInsn(GETSTATIC, className, "__scanner", "Ljava/util/Scanner;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "nextFloat", "()F", false);
+                return "F";
+            }
+            case "read_STRING": {
+                mv.visitFieldInsn(GETSTATIC, className, "__scanner", "Ljava/util/Scanner;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/util/Scanner", "next", "()Ljava/lang/String;", false);
+                return "Ljava/lang/String;";
+            }
+            case "str": {
+                String argType = inferType(args.get(0), varTypes);
+                generateExpr(args.get(0), mv, slots, varTypes);
+                String desc = argType.equals("F") ? "(F)Ljava/lang/String;" : "(I)Ljava/lang/String;";
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/String", "valueOf", desc, false);
+                return "Ljava/lang/String;";
+            }
+            case "floor": {
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitInsn(F2D);
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Math", "floor", "(D)D", false);
+                mv.visitInsn(D2I);
+                return "I";
+            }
+            case "ceil": {
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitInsn(F2D);
+                mv.visitMethodInsn(INVOKESTATIC, "java/lang/Math", "ceil", "(D)D", false);
+                mv.visitInsn(D2I);
+                return "I";
+            }
+            case "length": {
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/String", "length", "()I", false);
+                return "I";
+            }
+            case "not": {
+                generateExpr(args.get(0), mv, slots, varTypes);
+                mv.visitInsn(ICONST_1);
+                mv.visitInsn(IXOR);
+                return "Z";
+            }
+            default: return "V";
         }
     }
 
@@ -337,7 +439,9 @@ public class CodeGenerator {
             }
         }
         if (label.equals("FunctionCall")) {
-            String retType = funcReturnTypes.get(leafVal(expr, 0));
+            String funcName = leafVal(expr, 0);
+            if (isBuiltin(funcName)) return builtinReturnType(funcName);
+            String retType = funcReturnTypes.get(funcName);
             return (retType == null || retType.equals("void")) ? "V" : typeDesc(retType);
         }
         if (label.startsWith("BinaryExpr: ")) {
